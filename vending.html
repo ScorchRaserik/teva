@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+	<script>
+		$.fn.formToJSON = function() {
+			var objectGraph = {};
+			function add(objectGraph, name, value) {
+				if(name.length == 1) {
+					//if the array is now one element long, we're done
+					objectGraph[name[0]] = value;
+				}
+				else {
+					//else we've still got more than a single element of depth
+					if(objectGraph[name[0]] == null) {
+						//create the node if it doesn't yet exist
+						objectGraph[name[0]] = {};
+					}
+				//recurse, chopping off the first array element
+					add(objectGraph[name[0]], name.slice(1), value);
+				}
+			};
+			//loop through all of the input/text elements of the form
+			//this.find('input, text').each(function() {
+			$(this).children('input, text').each(function() {
+				//ignore the submit button
+				if($(this).attr('name') != 'submit') {
+					//split the dot notated names into arrays and pass along with the value
+					add(objectGraph, $(this).attr('name'), $(this).val());
+				}
+			});
+			return JSON.stringify(objectGraph);
+		};
+		$.ajaxSetup({
+			contentType: "application/json; charset=utf-8",
+			dataType: "json"
+		});
+		$(document).ready(function(){
+			$('#input').click(function() {
+				event.preventDefault();
+				var send = $("#form").formToJSON();
+				$.ajax({
+					url: "http://localhost:3000/",
+					type: "POST",
+					data: send,
+					error: function(xhr, error) {
+						alert('Error!  Status = ' + xhr.status + ' Message = ' + error);
+					},
+					success: function(data) {
+						alert("success");
+					}
+				});
+				return false; 
+			});
+		});
+	</script>
+</head>
+<body>
+
+<form id="form" enctype='application/json'>
+A0: <input type="text" name="product" value="Cheetos Crunchy, $1.00"><br>
+A2: <input type="text" name="product" value="Sun Chips Harvest Cheddar, $1.00"><br>
+A4: <input type="text" name="product" value="Lay's Original, $1.00"><br>
+A6: <input type="text" name="product" value="Lay's Original, $1.00"><br>
+A8: <input type="text" name="product" value="Doritos Nacho Cheese, $1.00"><br>
+B0: <input type="text" name="product" value="Jack Link's Tender Bites Original, $2.00"><br>
+B2: <input type="text" name="product" value="Ruffles Original, $1.00"><br>
+B4: <input type="text" name="product" value="Ruffles Original, $1.00"><br>
+B6: <input type="text" name="product" value="Fritos Chili Cheese, $1.00"><br>
+B8: <input type="text" name="product" value="Bugles Ranch, $1.00"><br>
+<input id="input" name="submit" type="submit" value="Update">
+</form>
+
+<p>Click the "Update" button to update the vending machine inventory.</p>
+
+</body>
+</html>
